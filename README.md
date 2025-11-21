@@ -75,8 +75,8 @@ docs/
 1.  **Clone the repository**
 
     ```bash
-    git clone [https://github.com/yourusername/voice-to-asana-tasks.git](https://github.com/yourusername/voice-to-asana-tasks.git)
-    cd voice-to-asana-tasks
+    git clone [https://github.com/tabitha-dev/voice-to-asana-tasks.git](https://github.com/tabitha-dev/voice-to-asana-tasks.git)
+cd voice-to-asana-tasks
     ```
 
 2.  **Install dependencies**
