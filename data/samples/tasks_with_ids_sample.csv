@@ -1,0 +1,5 @@
+task_name,notes,asana_task_id,subtask_name,subtask_notes,asana_subtask_id
+Plan holiday trip,Overall planning and bookings,1234567890,Book flights,Compare prices and book tickets,2234567890
+Plan holiday trip,Overall planning and bookings,1234567890,Reserve hotel,Check options and book hotel,2234567891
+Weekly cleaning,Household tasks,1234567891,,,
+Pay bills,Monthly payments,1234567892,Pay electricity bill,Due next week,2234567892
