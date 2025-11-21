@@ -84,7 +84,7 @@ docs/
 1.  **Clone the repository**
 
     ```bash
-    git clone [https://github.com/tabitha-dev/voice-to-asana-tasks.git](https://github.com/tabitha-dev/voice-to-asana-tasks.git)
+    git clone https://github.com/tabitha-dev/voice-to-asana-tasks.git
 cd voice-to-asana-tasks
     ```
 
@@ -189,4 +189,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-"""
+
