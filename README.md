@@ -26,14 +26,23 @@ Ideally suited for converting meeting transcripts, voice memos, or brain dumps i
 
 The system follows a linear pipeline from audio source to API execution.
 
-```mermaid
-graph LR
-    A[📱 Audio/Voice] -->|Transcribe| B[📝 Transcript Text]
-    B -->|Format| C[📊 Input CSV]
-    C -->|Run Script| D[⚡ Python Automation]
-    D -->|Request| E[☁️ Asana API]
-    E -->|Response| F[✅ Asana Tasks]
-    D -->|Write Back| G[💾 Output Registry CSV]
+```text
+[ 📱 Audio Recording ]
+          |
+          v
+[ 📝 Transcript Text ]
+          |
+          v
+[ 📊 CSV Structuring ]
+          |
+          v
+[ ⚡ Python Automation ]
+          |
+          v
+[ ☁️  Asana API ]
+          |
+          v
+[ 💾 Output Registry CSV ]
 ```
 
 ### System Overview
