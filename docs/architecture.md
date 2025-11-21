@@ -17,13 +17,13 @@ The workflow is designed to be **modular**: each stage is distinct, making it ea
 ## 🧩 System Diagram
 
 ```mermaid
-graph TD
-    A["🎤 Audio Recording"] -->|Transcribe| B["📄 Transcript Text"]
-    B -->|Map Fields| C["📊 CSV Structuring"]
-    C -->|Parse & Group| D["⚡ Python Automation Script"]
-    D -->|POST /tasks| E["☁️ Asana API"]
-    E -->|Return GIDs| D
-    D -->|Save IDs| F["💾 Output Registry CSV"]
+flowchart TD
+    A["🎤 Audio Recording"] -- Transcribe --> B["📄 Transcript Text"]
+    B -- Map Fields --> C["📊 CSV Structuring"]
+    C -- Parse & Group --> D["⚡ Python Automation Script"]
+    D -- POST /tasks --> E["☁️ Asana API"]
+    E -- Return GIDs --> D
+    D -- Save IDs --> F["💾 Output Registry CSV"]
 
     subgraph Inputs
     A
@@ -40,5 +40,4 @@ graph TD
     F
     end
 ```
-
 This separation of concerns allows us to swap out the transcription engine or change the input format without rewriting the core Asana logic.
