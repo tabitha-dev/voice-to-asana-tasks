@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Voice to Asana: An Interactive Engineering Case Study</title>
+    <!-- FIX: Added ?plugins=typography to load the plugin via CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    typography: (theme) => ({
+                        DEFAULT: {
+                            css: {
+                                color: theme('colors.slate.700'),
+                                h1: { fontFamily: 'Inter', fontWeight: '800' },
+                                h2: { fontFamily: 'Inter', fontWeight: '700', marginTop: '2em' },
+                                h3: { fontFamily: 'Inter', fontWeight: '600' },
+                                'code::before': { content: '""' },
+                                'code::after': { content: '""' },
+                            },
+                        },
+                    }),
+                },
+            },
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        /* Smooth Anchor Offset for Fixed Header */
+        html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Progress Bar -->
+    <div class="fixed top-0 left-0 h-1 bg-indigo-600 z-50" id="progressBar" style="width: 0%"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-40">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                    <i class="fas fa-wave-square text-xs"></i>
+                </div>
+                <span class="font-bold text-slate-900 tracking-tight">Voice2Asana</span>
+            </div>
+            <div class="flex items-center gap-4 text-sm font-medium">
+                <a href="#demo" class="hidden sm:block px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition">Try Demo</a>
+                <a href="https://github.com/tabitha-dev/voice-to-asana-tasks" target="_blank" class="text-slate-500 hover:text-slate-900 transition">
+                    <i class="fab fa-github text-lg"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-32 pb-20">
+        <article class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            <!-- Sidebar (Table of Contents) -->
+            <aside class="hidden lg:block lg:col-span-3 relative">
+                <div class="sticky top-32 space-y-4">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Contents</h4>
+                    <ul class="space-y-3 text-sm border-l-2 border-slate-100 pl-4" id="toc">
+                        <li><a href="#problem" class="block text-slate-600 hover:text-indigo-600 hover:translate-x-1 transition">The Problem</a></li>
+                        <li><a href="#demo" class="block text-indigo-600 font-semibold hover:translate-x-1 transition">✨ Interactive Demo</a></li>
+                        <li><a href="#architecture" class="block text-slate-600 hover:text-indigo-600 hover:translate-x-1 transition">System Architecture</a></li>
+                        <li><a href="#implementation" class="block text-slate-600 hover:text-indigo-600 hover:translate-x-1 transition">Implementation</a></li>
+                        <li><a href="#impact" class="block text-slate-600 hover:text-indigo-600 hover:translate-x-1 transition">Why This Matters</a></li>
+                        <li><a href="#principles" class="block text-slate-600 hover:text-indigo-600 hover:translate-x-1 transition">Engineering Principles</a></li>
+                        <li><a href="#future" class="block text-slate-600 hover:text-indigo-600 hover:translate-x-1 transition">Future Roadmap</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-9">
+                
+                <!-- Header -->
+                <header class="mb-12 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium mb-6">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                        Engineering Case Study
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-6 leading-[1.1]">
+                        Building an Automated <br>
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">Voice-to-Asana Pipeline</span>
+                    </h1>
+                    <div class="text-lg text-slate-600 font-serif leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                        <p>Teams and individuals generate an enormous amount of information through conversations, planning sessions, and day-to-day reflections. Much of this information is captured in voice recordings, meeting transcripts, or scattered notes.</p>
+                        <p class="mt-4">The challenge is getting those ideas into a reliable work management system without spending time transcribing and organizing everything manually.</p>
+                        <p class="mt-4">To solve this, I built an automation pipeline that converts any voice recording into a fully structured workflow inside Asana. The system brings together transcription, data modeling, and the Asana application programming interface to create tasks, subtasks, notes, and stable identifiers that can support future automation. The result is a natural way to turn unstructured ideas into actionable work.</p>
+                    </div>
+                </header>
+
+                <hr class="border-slate-200 mb-12">
+
+                <!-- Prose Content -->
+                <div class="prose prose-slate prose-lg max-w-none">
+                    
+                    <h2 id="problem">The Problem: Moving from Audio to Actionable Work</h2>
+                    <p>
+                        Like many people, I often speak out loud to think more clearly. I record tasks, ideas, and planning sessions on my phone throughout the day. The recordings help me think, but they never make it into Asana unless I manually rewrite them. That creates friction and results in missed tasks.
+                    </p>
+                    <p>
+                        Teams face an even bigger version of this problem. They record meetings in Zoom, Teams, or Google Meet. Those recordings contain decisions, deadlines, responsibilities, and follow ups. Yet there is rarely a consistent process that turns meeting recordings into structured projects.
+                    </p>
+                    <p>
+                        The opportunity is clear. If a system can convert a voice recording into a structured workflow with tasks and subtasks, then individuals and teams can move from conversation to execution much more reliably.
+                    </p>
+
+                    <!-- INTERACTIVE DEMO SECTION -->
+                    <div id="demo" class="my-16 -mx-4 sm:-mx-12 bg-slate-900 rounded-2xl p-1 shadow-2xl overflow-hidden ring-1 ring-white/10">
+                        <div class="bg-slate-950 rounded-xl overflow-hidden">
+                            <!-- Demo Header -->
+                            <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                                <div>
+                                    <h3 class="text-white font-bold text-lg m-0">Interactive Demo</h3>
+                                    <p class="text-slate-400 text-xs m-0">Simulate the parsing logic in real-time</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                </div>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                                <!-- Input -->
+                                <div class="p-6 border-r border-slate-800">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <label class="block text-xs font-bold text-indigo-400 uppercase">1. Voice Memo Transcription</label>
+                                        <div class="flex items-center gap-2 text-indigo-400/60 text-xs">
+                                            <i class="fas fa-microphone-lines animate-pulse"></i>
+                                            <span>00:45</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="relative bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+                                        <!-- Fake Waveform header -->
+                                        <div class="h-8 bg-slate-900/50 flex items-center px-4 border-b border-slate-800/50">
+                                            <div class="flex gap-0.5 h-3 items-center w-full">
+                                                <div class="w-0.5 bg-indigo-500/50 h-1 rounded-full animate-[pulse_1s_ease-in-out_infinite]"></div>
+                                                <div class="w-0.5 bg-indigo-500/50 h-2 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.1s]"></div>
+                                                <div class="w-0.5 bg-indigo-500/50 h-3 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_0.2s]"></div>
+                                                <div class="w-0.5 bg-indigo-500/50 h-2 rounded-full animate-[pulse_1.5s_ease-in-out_infinite_0.3s]"></div>
+                                                <div class="w-0.5 bg-indigo-500/50 h-1 rounded-full animate-[pulse_1.1s_ease-in-out_infinite_0.4s]"></div>
+                                                <div class="w-full border-b border-dashed border-indigo-500/20 ml-2"></div>
+                                            </div>
+                                        </div>
+                                        <textarea id="demoInput" class="w-full h-60 bg-transparent text-slate-300 p-4 focus:outline-none font-mono text-sm leading-relaxed resize-none" spellcheck="false">Plan Marketing Campaign
+- Research competitors for Q4
+Subtask: Draft email copy
+Note: Use the brand voice guide
+Subtask: Design banner assets
+
+Update Client
+- Send weekly report
+Note: Highlight the traffic increase</textarea>
+                                    </div>
+                                    <button onclick="processDemo()" class="mt-4 w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition flex items-center justify-center gap-2 group">
+                                        <i class="fas fa-wand-magic-sparkles group-hover:animate-pulse"></i> Generate Tasks
+                                    </button>
+                                </div>
+
+                                <!-- Output -->
+                                <div class="p-6 bg-slate-900/50 flex flex-col">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <label class="block text-xs font-bold text-emerald-400 uppercase">2. Asana Project View</label>
+                                        <div class="flex items-center gap-2 text-emerald-400/60 text-xs">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Automated</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Container for Asana-like tasks -->
+                                    <div id="asanaOutput" class="relative h-[240px] bg-white rounded-lg border border-slate-200 overflow-auto p-4 space-y-4 shadow-inner mb-4">
+                                        <!-- Tasks will be rendered here by JS -->
+                                        <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm">
+                                            <i class="fas fa-arrow-left text-2xl mb-2 opacity-50 animate-pulse"></i>
+                                            <p>Run the parser to see tasks here</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-auto">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Intermediate Data (CSV)</label>
+                                            <button onclick="downloadDemoCSV()" id="downloadBtn" class="text-[10px] bg-emerald-900/30 text-emerald-400 px-2 py-1 rounded border border-emerald-900/50 hover:bg-emerald-900/50 transition hidden">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </button>
+                                        </div>
+                                        <pre id="demoOutput" class="font-mono text-[10px] text-slate-400 whitespace-pre bg-slate-950 p-2 rounded border border-slate-800 overflow-x-auto h-20">task_name,notes,subtask_name...</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2>From Audio to Structured Data</h2>
+                    <p>
+                        The workflow begins with a normal audio recording. The recording is transcribed into text, which becomes the raw material for all downstream automation.
+                    </p>
+                    <p>
+                        The transcript is then mapped into a structured CSV with four columns:
+                    </p>
+                    <ul>
+                        <li><code>task_name</code></li>
+                        <li><code>notes</code></li>
+                        <li><code>subtask_name</code></li>
+                        <li><code>subtask_notes</code></li>
+                    </ul>
+                    <p>
+                        This structure supports a variety of formats: main tasks with multiple subtasks, main tasks with one subtask, or stand alone tasks. The CSV becomes the compact data model that drives the rest of the system.
+                    </p>
+
+                    <h2 id="architecture">System Overview Diagram</h2>
+                    <p>Below is a simple view of how information moves through the workflow. This design mirrors the architectures used in many modern automation pipelines.</p>
+
+                    <!-- CSS DIAGRAM -->
+                    <div class="not-prose my-12 p-8 bg-white border border-slate-200 rounded-xl shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center relative">
+                            <!-- Connection Line (Desktop) -->
+                            <div class="hidden md:block absolute top-1/2 left-10 right-10 h-0.5 bg-slate-100 -z-10 transform -translate-y-1/2"></div>
+
+                            <!-- Nodes -->
+                            <div class="p-4 bg-white border border-slate-200 rounded-lg shadow-sm z-10">
+                                <div class="text-2xl mb-2">🎤</div>
+                                <div class="text-xs font-bold uppercase text-slate-500">Input</div>
+                                <div class="font-semibold text-slate-900">Audio</div>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-lg shadow-sm z-10">
+                                <div class="text-2xl mb-2">📝</div>
+                                <div class="text-xs font-bold uppercase text-slate-500">Process</div>
+                                <div class="font-semibold text-slate-900">Transcribe</div>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-lg shadow-sm z-10">
+                                <div class="text-2xl mb-2">📊</div>
+                                <div class="text-xs font-bold uppercase text-slate-500">Model</div>
+                                <div class="font-semibold text-slate-900">Structure</div>
+                            </div>
+                            <div class="p-4 bg-indigo-600 text-white rounded-lg shadow-lg z-10 transform scale-110">
+                                <div class="text-2xl mb-2">⚡</div>
+                                <div class="text-xs font-bold uppercase text-indigo-200">Logic</div>
+                                <div class="font-semibold">Python</div>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-lg shadow-sm z-10">
+                                <div class="text-2xl mb-2">☁️</div>
+                                <div class="text-xs font-bold uppercase text-slate-500">API</div>
+                                <div class="font-semibold text-slate-900">Asana</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 id="implementation">Building Tasks and Subtasks with the Asana API</h2>
+                    <p>
+                        The Python script reads the structured CSV and communicates with the Asana application programming interface to create tasks and subtasks.
+                    </p>
+
+                    <div class="not-prose bg-slate-800 rounded-lg overflow-hidden my-8 shadow-lg text-sm">
+                        <div class="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-700">
+                            <span class="text-slate-400 font-mono">src/csv_to_asana.py</span>
+                            <div class="flex gap-1.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                            </div>
+                        </div>
+                        <div class="p-4 overflow-x-auto">
+<pre class="text-slate-300 font-mono"><code><span class="text-purple-400">def</span> <span class="text-blue-400">create_task</span>(session, name, notes):
+    <span class="text-gray-500">"""Creates a task with rate-limit handling."""</span>
+    url = <span class="text-green-400">"https://app.asana.com/api/1.0/tasks"</span>
+    payload = {
+        <span class="text-green-400">"data"</span>: {
+            <span class="text-green-400">"name"</span>: name, 
+            <span class="text-green-400">"notes"</span>: notes, 
+            <span class="text-green-400">"projects"</span>: [ASANA_PROJECT_ID]
+        }
+    }
+    
+    <span class="text-purple-400">try</span>:
+        response = session.post(url, json=payload)
+        response.raise_for_status()
+        <span class="text-purple-400">return</span> response.json()[<span class="text-green-400">"data"</span>][<span class="text-green-400">"gid"</span>]
+    <span class="text-purple-400">except</span> requests.exceptions.RequestException <span class="text-purple-400">as</span> e:
+        logger.error(<span class="text-green-400">f"API Error: {e}"</span>)
+        <span class="text-purple-400">return</span> <span class="text-yellow-400">None</span></code></pre>
+                        </div>
+                    </div>
+
+                    <h3>Output Registry for Future Automation</h3>
+                    <p>
+                        A second CSV is generated that contains the task name, notes, Asana task identifier, subtask name, subtask notes, and Asana subtask identifier. This registry acts as a stable reference map. Any future system can update tasks using these Asana identifiers.
+                    </p>
+
+                    <h2 id="impact">Why This Matters for Teams</h2>
+                    <p>
+                        Teams lose a surprising amount of information after meetings. Recordings are available, but the follow up tasks are often incomplete or inconsistent. This workflow bridges that gap by converting the content of a meeting directly into structured work.
+                    </p>
+                    <p>
+                        For example, a one hour planning meeting with four stakeholders generated more than thirty actionable items. Instead of rewatching the recording, I processed the transcript through the pipeline. The script produced a complete Asana task hierarchy organized by domain, including design, engineering, content, dependencies, and follow ups. The meeting owner immediately received a structured project instead of a raw transcript.
+                    </p>
+                    <p>
+                        This reduces operational drift and supports asynchronous collaboration.
+                    </p>
+
+                    <h2 id="principles">Engineering Principles Behind the Workflow</h2>
+                    <p>
+                        The system follows several principles found in production environments.
+                    </p>
+                    <ul>
+                        <li><strong>Deterministic outputs:</strong> The same input produces the same structure.</li>
+                        <li><strong>Modular separation of concerns:</strong> Input, logic, and API are distinct.</li>
+                        <li><strong>Idempotent behavior:</strong> Using the registry to avoid duplicates.</li>
+                        <li><strong>Human readable logs:</strong> Clear feedback during execution.</li>
+                        <li><strong>Future safe data modeling:</strong> Flexible CSV schema.</li>
+                        <li><strong>Clear boundaries:</strong> Between input, processing, and integration.</li>
+                    </ul>
+                    <p>
+                        These principles ensure the workflow remains reliable even as more features are added.
+                    </p>
+
+                    <h2 id="future">Future Expansion: Beyond Voice and Single Use Scripts</h2>
+                    <p>
+                        This workflow is the foundation for several larger possibilities. The design is general enough that new capabilities can be added without changing the underlying structure.
+                    </p>
+                    
+                    <div class="not-prose grid md:grid-cols-3 gap-6 my-8">
+                        <div class="group p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition duration-300">
+                            <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-robot text-xl"></i>
+                            </div>
+                            <h3 class="text-slate-900 font-bold text-lg mb-2">Voice Assistants</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">
+                                Alexa and similar devices can update tasks using the identifier registry.
+                            </p>
+                        </div>
+
+                        <div class="group p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition duration-300">
+                            <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-comments text-xl"></i>
+                            </div>
+                            <h3 class="text-slate-900 font-bold text-lg mb-2">Chat Copilots</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">
+                                Slack, Teams, or Discord bots can create or update tasks directly from chat messages.
+                            </p>
+                        </div>
+
+                        <div class="group p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition duration-300">
+                            <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center text-orange-600 mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-chart-pie text-xl"></i>
+                            </div>
+                            <h3 class="text-slate-900 font-bold text-lg mb-2">Analytics</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">
+                                Completed tasks, open tasks, and meeting derived tasks can be analyzed for cycle times.
+                            </p>
+                        </div>
+                    </div>
+
+                    <h2>What This Project Demonstrates</h2>
+                    <p>
+                        This project shows:
+                    </p>
+                    <ul>
+                        <li>Practical skill with application programming interfaces.</li>
+                        <li>Data modeling and structured automation.</li>
+                        <li>System design and architectural thinking.</li>
+                        <li>The ability to move from unstructured to structured information.</li>
+                        <li>Experience with real workflows that benefit teams.</li>
+                        <li>An understanding of extensibility and platform thinking.</li>
+                    </ul>
+                    <p>
+                        Automation is most valuable when it reduces friction and increases clarity. This system takes a natural human behavior—speaking ideas out loud—and transforms it into structured work that teams can depend on.
+                    </p>
+                    <p>
+                        I am always interested in connecting with others who enjoy building tools that improve productivity and collaboration.
+                    </p>
+
+                    <h2 id="resources">Asana Developer Resources</h2>
+                    <p>
+                        For further exploration, Asana provides rich documentation:
+                    </p>
+                    <ul class="space-y-2 not-prose my-6">
+                        <li>
+                            <a href="https://asana.com/developers" target="_blank" class="flex items-center group text-slate-600 hover:text-indigo-600 transition">
+                                <i class="fas fa-external-link-alt text-xs mr-2 text-slate-400 group-hover:text-indigo-500"></i>
+                                <span class="font-medium border-b border-transparent group-hover:border-indigo-200">Asana Developer Platform</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://developers.asana.com/reference/rest-api-reference" target="_blank" class="flex items-center group text-slate-600 hover:text-indigo-600 transition">
+                                <i class="fas fa-code text-xs mr-2 text-slate-400 group-hover:text-indigo-500"></i>
+                                <span class="font-medium border-b border-transparent group-hover:border-indigo-200">Asana REST API Reference</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://developers.asana.com/docs/quick-start" target="_blank" class="flex items-center group text-slate-600 hover:text-indigo-600 transition">
+                                <i class="fas fa-bolt text-xs mr-2 text-slate-400 group-hover:text-indigo-500"></i>
+                                <span class="font-medium border-b border-transparent group-hover:border-indigo-200">Asana API Quick Start Guide</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://asana.com/apps" target="_blank" class="flex items-center group text-slate-600 hover:text-indigo-600 transition">
+                                <i class="fas fa-cubes text-xs mr-2 text-slate-400 group-hover:text-indigo-500"></i>
+                                <span class="font-medium border-b border-transparent group-hover:border-indigo-200">Asana App Directory</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="not-prose mt-12 p-6 bg-indigo-50 border border-indigo-100 rounded-xl">
+                        <h3 class="text-indigo-900 font-bold text-lg mb-2">Interested in this project?</h3>
+                        <p class="text-indigo-700 mb-4">The code is open-source and available on GitHub. Contributions are welcome.</p>
+                        <a href="https://github.com/tabitha-dev/voice-to-asana-tasks" target="_blank" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition">
+                            <i class="fab fa-github mr-2"></i> View Repository
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-12">
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <p class="text-slate-500 text-sm">Built by <strong>Tabitha Khadse</strong> as an engineering case study.</p>
+            <div class="flex justify-center gap-6 mt-4 text-slate-400">
+                <a href="https://www.linkedin.com/in/tabitha-dev/" target="_blank" class="hover:text-indigo-600"><i class="fab fa-linkedin text-xl"></i></a>
+                <a href="https://github.com/tabitha-dev" target="_blank" class="hover:text-indigo-600"><i class="fab fa-github text-xl"></i></a>
+                <a href="mailto:tabitha@ieee.org" class="hover:text-indigo-600"><i class="fas fa-envelope text-xl"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // --- DEMO LOGIC ---
+        function processDemo() {
+            const input = document.getElementById('demoInput').value;
+            const lines = input.split('\n');
+            let csvOutput = "task_name,notes,subtask_name,subtask_notes\n";
+            
+            let currentTaskObj = null;
+            let tasks = [];
+
+            // 1. Parse Text
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+
+                if (line.startsWith("Subtask:")) {
+                    const subName = line.replace("Subtask:", "").trim();
+                    if (currentTaskObj) currentTaskObj.subtasks.push({ name: subName, notes: "" });
+                } else if (line.startsWith("Note:")) {
+                    const note = line.replace("Note:", "").trim();
+                    if (currentTaskObj) {
+                        if (currentTaskObj.subtasks.length > 0) {
+                            currentTaskObj.subtasks[currentTaskObj.subtasks.length - 1].notes = note;
+                        } else {
+                            currentTaskObj.notes = note; // overwrite/append main notes
+                        }
+                    }
+                } else if (line.startsWith("-")) {
+                    if (currentTaskObj) currentTaskObj.notes = line.replace("-", "").trim();
+                } else {
+                    // New Main Task
+                    currentTaskObj = { name: line, notes: "", subtasks: [] };
+                    tasks.push(currentTaskObj);
+                }
+            });
+
+            // 2. Generate CSV & Structure for UI
+            tasks.forEach(task => {
+                if (task.subtasks.length > 0) {
+                    task.subtasks.forEach(sub => {
+                        const tName = task.name.replace(/"/g, '""');
+                        const tNotes = task.notes.replace(/"/g, '""');
+                        const sName = sub.name.replace(/"/g, '""');
+                        const sNotes = sub.notes.replace(/"/g, '""');
+                        csvOutput += `"${tName}","${tNotes}","${sName}","${sNotes}"\n`;
+                    });
+                } else {
+                    const tName = task.name.replace(/"/g, '""');
+                    const tNotes = task.notes.replace(/"/g, '""');
+                    csvOutput += `"${tName}","${tNotes}","",""\n`;
+                }
+            });
+
+            // 3. Render Asana UI
+            renderAsanaTasks(tasks);
+
+            // 4. Update CSV Preview and Show Download
+            const csvPreviewEl = document.getElementById('demoOutput');
+            csvPreviewEl.textContent = csvOutput;
+            document.getElementById('downloadBtn').classList.remove('hidden');
+        }
+
+        function renderAsanaTasks(tasks) {
+            const outputEl = document.getElementById('asanaOutput');
+            outputEl.innerHTML = ''; // Clear previous content
+
+            if (tasks.length === 0) {
+                outputEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm">
+                        <p>No tasks found to render.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            tasks.forEach(task => {
+                // Main Task Container
+                const taskEl = document.createElement('div');
+                taskEl.className = 'bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden';
+
+                // Main Task Header
+                let taskHeaderHtml = `
+                    <div class="flex items-start gap-3 p-3 bg-slate-50 border-b border-slate-100">
+                        <div class="mt-0.5 text-slate-400">
+                            <i class="far fa-check-circle text-lg hover:text-emerald-500 cursor-pointer transition-colors"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-semibold text-slate-900">${task.name}</h4>
+                            ${task.notes ? `<p class="text-xs text-slate-500 mt-1 flex items-start gap-1"><i class="far fa-sticky-note mt-0.5"></i> ${task.notes}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                taskEl.innerHTML = taskHeaderHtml;
+
+                // Subtasks Container
+                if (task.subtasks.length > 0) {
+                    const subtasksContainer = document.createElement('div');
+                    subtasksContainer.className = 'p-3 pl-10 bg-white space-y-2';
+
+                    task.subtasks.forEach(sub => {
+                        const subtaskEl = document.createElement('div');
+                        subtaskEl.className = 'flex items-start gap-3 group';
+                        subtaskEl.innerHTML = `
+                            <div class="mt-0.5 text-slate-300 group-hover:text-slate-400 transition-colors">
+                                <i class="far fa-circle text-sm hover:text-emerald-500 cursor-pointer transition-colors"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-slate-700">${sub.name}</p>
+                                ${sub.notes ? `<p class="text-xs text-slate-400 mt-0.5 flex items-start gap-1"><i class="far fa-sticky-note mt-0.5"></i> ${sub.notes}</p>` : ''}
+                            </div>
+                        `;
+                        subtasksContainer.appendChild(subtaskEl);
+                    });
+                    taskEl.appendChild(subtasksContainer);
+                }
+
+                outputEl.appendChild(taskEl);
+            });
+
+            // Visual Feedback
+            outputEl.parentElement.classList.remove('ring-2', 'ring-emerald-500');
+            void outputEl.offsetWidth; // trigger reflow
+            outputEl.parentElement.classList.add('ring-2', 'ring-emerald-500', 'transition-all', 'duration-500');
+            setTimeout(() => outputEl.parentElement.classList.remove('ring-2', 'ring-emerald-500'), 500);
+        }
+
+        // --- DOWNLOAD CSV FUNCTION ---
+        function downloadDemoCSV() {
+            const csvContent = document.getElementById('demoOutput').textContent;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "asana_tasks_demo.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- SCROLL PROGRESS BAR ---
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+    </script>
+</body>
+</html>
